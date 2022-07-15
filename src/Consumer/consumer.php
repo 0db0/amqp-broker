@@ -7,6 +7,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Channel\AMQPChannel;
 
 error_reporting(E_ALL & ~E_DEPRECATED);
 
@@ -18,14 +19,20 @@ $channel->queue_declare('hello_queue', false, false, false, false);
 echo '[x] Waiting for messages. To exit press CTRL+C' . PHP_EOL;
 
 $callback = static function(AMQPMessage $msg): void {
-    echo sprintf('[x] Received %s%s', $msg->body, PHP_EOL);
+    echo sprintf('[x] Received %s%s', $msg->getBody(), PHP_EOL);
+    sleep(substr_count($msg->getBody(), '.'));
+    echo sprintf('[x] Done!%s', PHP_EOL);
+    $msg->ack();
 };
 
-$channel->basic_consume('hello_queue', '',false, true, false, false, $callback);
+$channel->basic_qos(null, 1, null);
+$channel->basic_consume('hello_queue', '',false, false, false, false, $callback);
 
-while ($channel->is_open()) {
-    $channel->wait();
-}
+$shutdownCallback = static function(AMQPChannel $channel, AMQPStreamConnection $connection): void {
+    $channel->close();
+    $connection->close();
+};
 
-$channel->close();
-$connection->close();
+register_shutdown_function($shutdownCallback, $channel, $connection);
+
+$channel->consume();
