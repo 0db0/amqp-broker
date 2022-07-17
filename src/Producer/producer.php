@@ -11,18 +11,20 @@ use PhpAmqpLib\Exchange\AMQPExchangeType;
 
 error_reporting(E_ALL & ~E_DEPRECATED);
 
+$severity = $argv[1] ?? 'info';
+
 $content = 'FOO BAR';
 
-if ($argc > 1) {
+if ($argc > 2) {
     $content = implode(' ', array_slice($argv, 1));
 }
 
 $connection = new AMQPStreamConnection('message-broker', 5672, 'guest', 'guest');
 $channel = $connection->channel();
-$channel->exchange_declare('logs', AMQPExchangeType::FANOUT, false, false, false);
+$channel->exchange_declare('direct_logs', AMQPExchangeType::DIRECT, false, false, false);
 
 $message= new AMQPMessage($content);
-$channel->basic_publish($message, 'logs');
+$channel->basic_publish($message, 'direct_logs', $severity);
 
 echo sprintf('[x] Sent %s%s', $content, PHP_EOL);
 

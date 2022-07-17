@@ -17,3 +17,9 @@ ps:
 
 composer:
 	./scripts/composer.sh $(c)
+
+producer:
+	docker-compose exec php php src/Producer/producer.php
+
+consumer:
+	docker-compose exec php php src/Consumer/consumer.php
