@@ -15,18 +15,18 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 $connection = new AMQPStreamConnection('message-broker', 5672, 'guest', 'guest');
 $channel = $connection->channel();
 
-$channel->exchange_declare('direct_logs', AMQPExchangeType::DIRECT, false, false, false);
+$channel->exchange_declare('topic_logs', AMQPExchangeType::TOPIC, false, false, false);
 
 [$queueName] = $channel->queue_declare('', false, false, true, false);
 
-$severities = array_slice($argv, 1);
+$bindingKeys = array_slice($argv, 1);
 
-if (empty($severities)) {
-    file_put_contents('php://stderr', sprintf('Usage: $argv[0] [info] [warning] [error]%s', PHP_EOL));
+if (empty($bindingKeys)) {
+    file_put_contents('php://stderr', sprintf('Usage: $argv[0] [binding_key]%s', PHP_EOL));
     exit(1);
 }
-foreach ($severities as $severity) {
-    $channel->queue_bind($queueName, 'direct_logs', $severity);
+foreach ($bindingKeys as $bindingKey) {
+    $channel->queue_bind($queueName, 'topic_logs', $bindingKey);
 }
 
 echo '[x] Waiting for logs. To exit press CTRL+C' . PHP_EOL;
